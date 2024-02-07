@@ -3,22 +3,22 @@ Official Implementation of SLEB: Streamlining LLMs through Redundancy Verificati
 
 ## Installation
 
-  git clone https://github.com/leapingjagg-dev/SLEB.git
-  conda create -n sleb python==3.10
-  cd sleb
-  pip install -r requirements.txt
-  cd lm-evaluation-harness
-  pip install -e .
-  cd ..
+    git clone https://github.com/leapingjagg-dev/SLEB.git
+    conda create -n sleb python==3.10
+    cd sleb
+    pip install -r requirements.txt
+    cd lm-evaluation-harness
+    pip install -e .
+    cd ..
 
 ## Examples
 
 To find 20% of blocks to remove and evaluate perplexity and zero-shot tasks performances (LLaMA-2-70B):
 
-  python -m sleb --model_name meta-llama/Llama-2-70b-hf --num_blocks 80 --num_remove_blocks 16 --eval_ppl --eval_zeroshot
+    python -m sleb --model_name meta-llama/Llama-2-70b-hf --num_blocks 80 --num_remove_blocks 16 --eval_ppl --eval_zeroshot
 
 To evaluate performances of a model with designated blocks removed:
 
-  python -m eval --model_name facebook/opt-13b --removal_list '[5, 4, 9, 2, 14, 25, 34, 10]' --eval_zeroshot
+    python -m eval --model_name facebook/opt-13b --removal_list '[5, 4, 9, 2, 14, 25, 34, 10]' --eval_zeroshot
 
 
