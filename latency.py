@@ -3,7 +3,7 @@ import fire
 import numpy as np
 from utils import remove, model_utils, latency_utils
 
-def test_latency(
+def run(
     model_name='meta-llama/Llama-2-7b-hf',
     skip_ratio=0.2,
     generation=False,
@@ -48,7 +48,7 @@ def test_latency(
         file.write(", ")
         file.write(f"# GPU: {str(gpu_num)}")
         file.write(", ")
-        file.write(f"Model Name: {model}")
+        file.write(f"Model Name: {model_name}")
         file.write(", ")
         file.write(f"Infernce type : {'Token Generation' if generation else 'Prompt Processing'}")
         file.write(", ")
@@ -60,4 +60,4 @@ def test_latency(
         file.write("\n")
 
 if __name__ == '__main__':
-    fire.Fire(test_latency)
+    fire.Fire(run)

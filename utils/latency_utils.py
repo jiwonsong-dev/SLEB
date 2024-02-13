@@ -1,4 +1,5 @@
 import torch
+import accelerate
 
 @torch.no_grad()
 def test_latency(model, generation) :
