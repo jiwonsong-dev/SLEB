@@ -10,6 +10,7 @@ Official Implementation of SLEB: Streamlining LLMs through Redundancy Verificati
     cd lm-evaluation-harness
     pip install -e .
     cd ..
+    mkdir sleb_results
 
 ## Examples
 
