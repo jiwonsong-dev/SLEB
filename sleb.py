@@ -156,7 +156,6 @@ def sleb(
         print(f"Starting PPL evaluation...")
         model = remove(model, copy.deepcopy(removal_list))
         model.config.use_cache = use_cache
-        import pdb; pdb.set_trace()
 
         w2_ppl = load_and_eval_ppl(model, device=torch.device("cuda:0"), dataset='wikitext2')
         print(f"WikiText-2 PPL = {w2_ppl:.2f}")
