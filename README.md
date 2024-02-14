@@ -24,4 +24,9 @@ To evaluate performances of a model with designated blocks removed:
 
 To evaluate speedup of a 20% removed model compared to a dense model:
 
-    python3 -m latency --model_name meta-llama/Llama-2-7b-hf --generation 
+    python3 -m latency --model_name meta-llama/Llama-2-7b-hf --generation
+
+## Cite as
+
+    Need Update after arXiv upload
+
