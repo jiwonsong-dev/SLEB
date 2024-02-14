@@ -22,6 +22,9 @@ To evaluate performances of a model with designated blocks removed:
 
     python -m eval --model_name facebook/opt-13b --removal_list '[5, 4, 9, 2, 14, 25, 34, 10]' --eval_zeroshot True
 
+For zero-shot task performance evaluation of SLEB models, we integrated a modified version of EuletherAI's lm-evaluation-harness to our codes.
+You can access the original repository here: https://github.com/EleutherAI/lm-evaluation-harness
+
 To evaluate speedup of a 20% removed model compared to a dense model:
 
     python3 -m latency --model_name meta-llama/Llama-2-7b-hf --generation
