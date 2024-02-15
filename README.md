@@ -1,5 +1,5 @@
 # SLEB
-Official Implementation of SLEB: Streamlining LLMs through Redundancy Verification and  Elimination of Transformer Blocks
+Official Implementation of [SLEB: Streamlining LLMs through Redundancy Verification and  Elimination of Transformer Blocks](http://arxiv.org/abs/2402.09025)
 
 ## Installation
 
