@@ -170,8 +170,7 @@ def sleb(
         else:
             parallelize = False
 
-        # tasks = ['piqa','winogrande','hellaswag','arc_challenge','arc_easy']
-        tasks = ['piqa','winogrande']
+        tasks = ['piqa','winogrande','hellaswag','arc_challenge','arc_easy']
 
         results = eval_zero_shot(model_name, copy.deepcopy(removal_list), tasks, parallelize=parallelize)
         results = results['results']
@@ -192,7 +191,7 @@ def sleb(
 
         if eval_ppl:
             sentences.append(f"WikiText-2 PPL = {w2_ppl:.2f}\n")
-            sentences.append(f"C4 PPL = {c4_ppl:.2f}n")
+            sentences.append(f"C4 PPL = {c4_ppl:.2f}\n")
 
         if eval_zeroshot:
             sentences.append(f"Zero-shot results: \n")

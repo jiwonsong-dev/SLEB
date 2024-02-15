@@ -31,5 +31,14 @@ To evaluate speedup of a 20% removed model compared to a dense model:
 
 ## Cite as
 
-    Need Update after arXiv upload
+    @misc{song2024sleb,
+      title={SLEB: Streamlining LLMs through Redundancy Verification and Elimination of Transformer Blocks}, 
+      author={Jiwon Song and Kyungseok Oh and Taesu Kim and Hyungjun Kim and Yulhwa Kim and Jae-Joon Kim},
+      year={2024},
+      eprint={2402.09025},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
+    }
+
+
 
