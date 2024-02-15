@@ -49,7 +49,6 @@ def eval(
             parallelize = False
 
         tasks = ['piqa','winogrande','hellaswag','arc_challenge','arc_easy']
-        #tasks = ['piqa', 'winogrande']
 
         results = eval_zero_shot(model_name, copy.deepcopy(removal_list), tasks, parallelize=parallelize)
         results = results['results']
