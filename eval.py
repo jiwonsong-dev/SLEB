@@ -6,12 +6,15 @@ from typing import List
 import torch
 
 from utils.model_utils import get_llm
+from utils.data_utils import *
 from utils.eval_utils import load_and_eval_ppl, eval_zero_shot
 from utils.remove import remove
 
 def eval(
-        model_name: str = 'facebook/opt-13b',
-        removal_list: List[int] = [4,8,2,13,17,24,36,12],
+        model_name: str = 'meta-llama/Llama-2-70b-hf',
+        removal_list: List[int] = [33, 29, 61, 11, 55, 30, 59, 28, 50, 27, 68, 32, 31, 15, 60, 49],
+        save_model: bool = False,
+        save_path: str = 'models/llama-2-70b_sleb_16_80',
         save_results: bool = True,
         result_path: str = "sleb_results/eval.txt",
         device: int = 0,
@@ -26,6 +29,12 @@ def eval(
     original_removal_list = copy.deepcopy(removal_list)
     removal_list.sort()
     model = remove(model, copy.deepcopy(removal_list))
+
+    if save_model:
+        model.save_pretrained(save_path)
+        get_tokenizer(model_name).save_pretrained(save_path)
+        print("Model and tokenizer successfully saved.")
+
     
     print(f"Starting PPL evaluation...")
     ppl_list = {}
