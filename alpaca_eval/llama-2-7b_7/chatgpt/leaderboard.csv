@@ -1,0 +1,2 @@
+,win_rate,standard_error,n_wins,n_wins_base,n_draws,n_total,discrete_win_rate,mode,avg_length
+Llama-2-7b-hf_7,24.720496894409937,1.5111945467102923,195,602,8,805,24.720496894409937,community,785

@@ -3,6 +3,7 @@ from typing import List
 import copy
 import json
 import os
+from tqdm import tqdm
 
 import torch
 import datasets
@@ -25,7 +26,8 @@ def generate(
              ):
     
     run_name = f"{get_after_slash(model_name)}_{len(removal_list)}"
-    save_path = os.path.join(save_path, run_name)
+    save_filename = run_name+'.json'
+    save_path = os.path.join(save_path, save_filename)
     
     model = get_llm(model_name)
     tokenizer = get_tokenizer(model_name)
@@ -35,15 +37,17 @@ def generate(
     removal_list.sort()
     model = remove_fn(model, copy.deepcopy(removal_list))
 
+    datasplit = 'eval'
+    eval_set = datasets.load_dataset("tatsu-lab/alpaca_eval", "alpaca_eval")[datasplit]
+    print(f"Loaded AlpacaEval dataset.")
+    
     print(f"Starting output generation")
-
-    eval_set = datasets.load_dataset("tatsu-lab/alpaca_eval", "alpaca_eval")["eval"]
-    for example in eval_set:
+    examples = []
+    for example in tqdm(eval_set):
         
         input_len = len(example['instruction'])
         input_ids = tokenizer.encode(example['instruction'], return_tensors="pt").to(model.device)
         max_new_tokens=256
-
         
         output = model.generate(
                                 input_ids,
@@ -53,13 +57,19 @@ def generate(
                                 )
             
         torch.cuda.empty_cache()
-        example['output'] = tokenizer.decode(output[0], skip_special_tokens=True)[input_len:]
+        example['generator'] = run_name
+        example['output'] = tokenizer.decode(output[0], skip_special_tokens=True)[input_len+1:]
+        example['datasplit'] = datasplit
 
-        with open(save_path, "a") as f:
-            f.write(json.dumps(example, indent=4))
-            f.write('\n')
-            f.flush()
+        # with open(save_path, "a") as f:
+        #     f.write(json.dumps(example, indent=4))
+        #     f.write('\n')
+        #     f.flush()
+        examples.append(example)
 
+    with open(save_path, "a") as json_file:
+        json.dump(examples, json_file)
+    
     print("JSON generation complete!\n")
 
 if __name__ == '__main__':
