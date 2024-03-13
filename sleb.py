@@ -9,7 +9,7 @@ import torch.nn as nn
 from utils.model_utils import get_llm
 from utils.onoff_utils.onoff import replace, turn_off, turn_on
 from utils.data_utils import *
-from utils.remove import remove
+from utils.remove import remove_fn
 from utils.eval_utils import load_and_eval_ppl, eval_zero_shot
 
 @torch.no_grad()
@@ -62,7 +62,7 @@ def nlls(model, testenc, bs=1, device=None):
 
 
 def sleb(
-        model_name: str = 'facebook/opt-6.7b',
+        model_name: str = 'meta-llama/Llama-2-7b-hf',
         num_blocks: int = 32,
         num_remove_blocks: int = 7,
         early_barrier: int = 1,
@@ -154,7 +154,7 @@ def sleb(
 
     if eval_ppl:
         print(f"Starting PPL evaluation...")
-        model = remove(model, copy.deepcopy(removal_list))
+        model = remove_fn(model, copy.deepcopy(removal_list))
         model.config.use_cache = use_cache
 
         w2_ppl = load_and_eval_ppl(model, device=torch.device("cuda:0"), dataset='wikitext2')

@@ -131,7 +131,7 @@ def get_c4_trainenc(seed, nsamples, seqlen, model, tokenizer, batch_size):
     traindata = load_dataset(
         'allenai/c4', data_files={'train': 'en/c4-train.00000-of-01024.json.gz'}, split='train'
     )
-    valdata = load_dataset('allenai/c4', data_files={'validation': 'en/c4-validation.00000-of-00008.json.gz'}, split='validation')
+    
     traindata = traindata.shuffle(seed=seed)
     
     trainenc = tokenizer(' '.join(traindata[:nsamples]['text']), return_tensors='pt')
@@ -144,9 +144,20 @@ def get_c4_trainenc(seed, nsamples, seqlen, model, tokenizer, batch_size):
 
     return trainenc
 
+def get_bookcorpus_trainenc(seed, nsamples, seqlen, model, tokenizer, batch_size):
+
+    traindata = load_dataset('bookcorpus', split='train')
+    traindata = traindata.shuffle(seed=seed)
+    trainenc = tokenizer("\n\n".join(traindata[:nsamples]['text']), return_tensors='pt')
+
+    return trainenc
+
+
 def get_trainloaders(name, nsamples=128, seed=0, seqlen=2048, model='', batch_size=1):
     tokenizer = get_tokenizer(model)
     if 'wikitext2' in name:
         return get_wikitext2_trainenc(seed, nsamples, seqlen, model, tokenizer, batch_size)
     if 'c4' in name:
         return get_c4_trainenc(seed, nsamples, seqlen, model, tokenizer, batch_size)
+    if 'bookcorpus' in name:
+        return get_bookcorpus_trainenc(seed, nsamples, seqlen, model, tokenizer, batch_size)

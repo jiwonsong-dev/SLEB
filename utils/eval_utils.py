@@ -81,7 +81,7 @@ def eval_ppl(model, testenc, bs=1, device=None):
 
 torch.no_grad()
 def eval_zero_shot(model_name, removal_list, task_list=['piqa','winogrande','hellaswag','arc_challenge','arc_easy'], 
-        num_fewshot=0, parallelize=False):
+        num_fewshot=0, parallelize=False, lora_weights=''):
     
     from lm_eval import tasks, evaluator, utils
     task_manager = tasks.TaskManager(include_path='lm-evaluation-harness/lm_eval/tasks')
@@ -124,6 +124,7 @@ def eval_zero_shot(model_name, removal_list, task_list=['piqa','winogrande','hel
         task_manager=task_manager,
         remove = remove,
         removal_list = removal_list,
+        lora_weights = lora_weights,
     )
 
     return results 

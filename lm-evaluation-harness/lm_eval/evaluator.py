@@ -3,6 +3,7 @@ import itertools
 import collections
 
 import torch
+from peft import PeftModel
 
 import logging
 import numpy as np
@@ -47,6 +48,7 @@ def simple_evaluate(
     predict_only: bool = False,
     remove: bool = False,
     removal_list: list = None,
+    lora_weights: str = '',
 ):
     """Instantiate and evaluate a model on a list of tasks.
 
@@ -120,9 +122,21 @@ def simple_evaluate(
             },
         )
         if remove is True:
-            from utils.remove import remove as remove_fn
+            from utils.remove import remove_fn
             lm.model.name = model_args
             lm._model = remove_fn(lm.model, removal_list)
+
+            if lora_weights != '':
+                lm._model = PeftModel.from_pretrained(
+                lm._model,
+                lora_weights,
+                device_map={"": device},
+                torch_dtype=torch.float16,
+                )
+                print(f"Loaded LoRA weights.")
+
+                lm._model = lm._model.merge_and_unload(progressbar=True)
+                print(f"Merged LoRA adapters to the model.")
 
     else:
         assert isinstance(model, lm_eval.api.model.LM)

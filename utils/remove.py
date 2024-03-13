@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from tqdm import tqdm
 
-def remove(model, kill_list):
+def remove_fn(model, kill_list):
     print(f"Removing layers... {kill_list}")
     if 'opt' in model.name.lower():
         return remove_opt(model, kill_list)

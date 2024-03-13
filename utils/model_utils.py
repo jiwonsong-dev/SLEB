@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from transformers import AutoModelForCausalLM
 
-def get_llm(model_name, device_map="auto"):
+def get_llm(model_name, device_map="auto", dtype="auto"):
 
     def skip(*args, **kwargs):
         pass
@@ -12,7 +12,7 @@ def get_llm(model_name, device_map="auto"):
     torch.nn.init.normal_ = skip
     
     model = AutoModelForCausalLM.from_pretrained(model_name, 
-                                                 torch_dtype='auto',
+                                                 torch_dtype=dtype,
                                                  low_cpu_mem_usage=True,
                                                  device_map=device_map,
                                                  )
