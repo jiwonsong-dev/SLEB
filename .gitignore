@@ -23,3 +23,4 @@ models
 wandb
 adapters
 outputs
+alpaca_eval
