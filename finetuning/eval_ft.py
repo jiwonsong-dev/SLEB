@@ -13,14 +13,15 @@ from utils.remove import remove_fn
 
 def eval(
         model_name: str = 'meta-llama/Llama-2-7b-hf',
-        removal_list: List[int] = [14,23,11,24,10,27,15],
-        lora_weights: str = 'finetuning/adapters/Llama-2-7b-hf_7',
+        removal_list: List[int] = [10, 11, 12, 23],
+        lora_weights: str = 'finetuning/adapters/Llama-2-7b-hf_4_e1_r8_len128',
         save_model: bool = False,
-        save_path: str = 'models/llama-2-7b_sleb_7_32_ft',
+        save_path: str = 'models/llama-2-7b_sleb_4_32_ft',
         save_results: bool = True,
         result_path: str = "sleb_results/eval.txt",
         device: int = 0,
-        eval_zeroshot: bool = False
+        eval_zeroshot: bool = True,
+        seqlen: int = 128
     ):
     
     
@@ -49,6 +50,7 @@ def eval(
         get_tokenizer(model_name).save_pretrained(save_path)
         print("Model and tokenizer successfully saved.")
 
+    model.seqlen = seqlen
     
     print(f"Starting PPL evaluation...")
     ppl_list = {}

@@ -2,6 +2,7 @@ import copy
 from tqdm import tqdm
 import fire
 from typing import List
+import os
 
 import torch
 
@@ -10,9 +11,12 @@ from utils.data_utils import *
 from utils.eval_utils import load_and_eval_ppl, eval_zero_shot
 from utils.remove import remove_fn
 
+from slicegpt import data_utils, gpu_utils, hf_utils, layernorm_fusion, rotate, utils
+
+
 def eval(
         model_name: str = 'meta-llama/Llama-2-7b-hf',
-        removal_list: List[int] = [9, 10, 11, 12, 23, 24, 27],
+        sparsity: float = 0.25,
         save_model: bool = False,
         save_path: str = 'models/llama-2-7b_sleb_7_32',
         save_results: bool = True,
@@ -24,26 +28,46 @@ def eval(
         eval_mmlu: bool = False,
         seqlen: int = 2048,
     ):
-    
-    
-    model = get_llm(model_name)
-    print(f"Loaded Model: {model.name}")
-    model.eval()
 
-    if len(removal_list) != 0:
-        original_removal_list = copy.deepcopy(removal_list)
-        removal_list.sort()
-        model = remove_fn(model, copy.deepcopy(removal_list))
-        
+    if '7b' in model_name:
+        designator = '7b'
+    elif '13b' in model_name:
+        designator = '13b'
+    else:
+        designator = '70b'
+    
+    if sparsity == 0.2:
+        sliced_model_path = f'/home/jiwonsong/LLM_pruning/TransformerCompression/experiments/dir/Llama-2-{designator}-hf_0.2.pt'
+    elif sparsity == 0.25:
+        sliced_model_path = f'/home/jiwonsong/LLM_pruning/TransformerCompression/experiments/dir/Llama-2-{designator}-hf_0.25.pt'
+    else:
+        sliced_model_path = f'/home/jiwonsong/LLM_pruning/TransformerCompression/experiments/dir/Llama-2-{designator}-hf_0.3.pt'
 
-    if save_model:
-        model.save_pretrained(save_path)
-        get_tokenizer(model_name).save_pretrained(save_path)
-        print("Model and tokenizer successfully saved.")
-        
-    model.seqlen = seqlen
+    
 
     if eval_ppl:
+        
+        print(f"Loading sliced {model_name} model from {sliced_model_path} with sparsity {sparsity}")
+        model_adapter, _ = hf_utils.load_sliced_model(
+                model_name, sliced_model_path, sparsity, os.getenv('HF_TOKEN', None)
+            )
+        model = model_adapter.model
+
+        if '30b' or '66b' or '70b' in model_name:
+            gpu_utils.distribute_model(model_adapter)
+        else:
+            model = model.cuda()
+            
+        model.name = model_name
+        print(f"Loaded Sliced Model: {model.name} with sparsity {sparsity}")
+        
+
+        if save_model:
+            model.save_pretrained(save_path)
+            get_tokenizer(model_name).save_pretrained(save_path)
+            print("Model and tokenizer successfully saved.")
+            
+        model.seqlen = seqlen
 
         print(f"Starting PPL evaluation...")
         ppl_list = {}
@@ -53,10 +77,10 @@ def eval(
             print(f"{dataset} perplexity = {ppl:.2f}")
 
             ppl_list[dataset] = ppl
-    
 
-    del model
-    torch.cuda.empty_cache()
+        del model
+        torch.cuda.empty_cache()
+    
 
     if eval_zeroshot:
 
@@ -68,7 +92,14 @@ def eval(
 
         zeroshot_tasks = ['piqa','winogrande','hellaswag','arc_challenge','arc_easy']
 
-        zeroshot_results = eval_zero_shot(model_name, copy.deepcopy(removal_list), zeroshot_tasks, parallelize=parallelize)
+        zeroshot_results = eval_zero_shot(model_name, 
+                                          [],
+                                        zeroshot_tasks, 
+                                        parallelize=parallelize,
+                                        slice=True,
+                                        sliced_model_sparsity=sparsity,
+                                        sliced_model_path=sliced_model_path,
+                                        )
         zeroshot_results = zeroshot_results['results']
 
         for task in zeroshot_tasks:
@@ -84,7 +115,15 @@ def eval(
 
         five_shot_tasks = ['piqa','winogrande','hellaswag','arc_challenge','arc_easy']
 
-        five_shot_results = eval_zero_shot(model_name, copy.deepcopy(removal_list), five_shot_tasks, num_fewshot=5, parallelize=parallelize)
+        five_shot_results = eval_zero_shot(model_name, 
+                                           [], 
+                                           five_shot_tasks, 
+                                           num_fewshot=5, 
+                                           parallelize=parallelize,
+                                           slice=True,
+                                           sliced_model_sparsity=sparsity,
+                                           sliced_model_path=sliced_model_path,
+                                           )
         five_shot_results = five_shot_results['results']
 
         for task in five_shot_tasks:
@@ -100,7 +139,7 @@ def eval(
 
         mmlu_tasks = ['mmlu']
 
-        mmlu_result = eval_zero_shot(model_name, copy.deepcopy(removal_list), mmlu_tasks, num_fewshot=5, parallelize=parallelize)
+        mmlu_result = eval_zero_shot(model_name, [], mmlu_tasks, num_fewshot=5, parallelize=parallelize)
         mmlu_result = mmlu_result['results']
 
         for task in mmlu_tasks:
@@ -110,7 +149,7 @@ def eval(
         with open(result_path, 'a') as file:
             sentences = []
             sentences.append(f"Model Name: {model_name}\n")
-            #sentences.append(f"Block Removal Order: {original_removal_list}\n")
+            sentences.append(f"Sparsity: {sparsity}\n")
             
             if eval_ppl:
                 sentences.append(f"WikiText-2 PPL: {ppl_list['wikitext2']:.2f}\n")

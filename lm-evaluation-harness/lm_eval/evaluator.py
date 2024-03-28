@@ -1,6 +1,7 @@
 import random
 import itertools
 import collections
+import os
 
 import torch
 from peft import PeftModel
@@ -17,6 +18,7 @@ from lm_eval.tasks import (
     get_task_dict,
     TaskManager
 )
+
 from lm_eval.utils import (
     positional_deprecated,
     run_task_tests,
@@ -24,6 +26,8 @@ from lm_eval.utils import (
     simple_parse_args_string,
     eval_logger
 )
+
+from slicegpt import data_utils, gpu_utils, hf_utils, layernorm_fusion, rotate, utils
 
 
 @positional_deprecated
@@ -49,6 +53,10 @@ def simple_evaluate(
     remove: bool = False,
     removal_list: list = None,
     lora_weights: str = '',
+    slice: bool = False,
+    sliced_model_sparsity: float = 0.0,
+    sliced_model_path: str = '',
+    base_model: str = '',
 ):
     """Instantiate and evaluate a model on a list of tasks.
 
@@ -121,11 +129,38 @@ def simple_evaluate(
                 "device": device,
             },
         )
+
+        if slice:
+            print(f"Loading sliced model model from {sliced_model_path} with sparsity {sliced_model_sparsity}")
+            model_adapter, _ = hf_utils.load_sliced_model(
+                base_model, sliced_model_path, sliced_model_sparsity, os.getenv('HF_TOKEN', None)
+            )
+            model = model_adapter.model
+            if '30b' or '66b' or '70b' in base_model:
+                gpu_utils.distribute_model(model_adapter)
+            else:
+                model = model.cuda()
+            model.name = base_model
+            print(f"Loaded Sliced Model: {base_model} with sparsity {sliced_model_sparsity}")
+            lm._model = model
+
         if remove is True:
             from utils.remove import remove_fn
             lm.model.name = model_args
             lm._model = remove_fn(lm.model, removal_list)
 
+            if lora_weights != '':
+                lm._model = PeftModel.from_pretrained(
+                lm._model,
+                lora_weights,
+                device_map={"": device},
+                torch_dtype=torch.float16,
+                )
+                print(f"Loaded LoRA weights.")
+
+                lm._model = lm._model.merge_and_unload(progressbar=True)
+                print(f"Merged LoRA adapters to the model.")
+        else:
             if lora_weights != '':
                 lm._model = PeftModel.from_pretrained(
                 lm._model,

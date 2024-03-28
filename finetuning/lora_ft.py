@@ -42,12 +42,12 @@ def train(
     output_dir: str = "finetuning/adapters",
     # SLEB params
     remove: bool = False,
-    removal_list: list = [14,23,11,24,10,27,15],
+    removal_list: list = [10, 11, 12, 23],
     # training hyperparams
     batch_size: int = 64,
     micro_batch_size: int = 32,
     num_epochs: int = 1,
-    learning_rate: float = 1e-4,
+    learning_rate: float = 2e-4,
     cutoff_len: int = 128,
     val_set_size: int = 2000,
     # lora hyperparams
@@ -59,6 +59,9 @@ def train(
         "k_proj",
         "v_proj",
         "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj",
     ],
     # llm hyperparams
     train_on_inputs: bool = True,  # if False, masks out inputs in loss
@@ -73,7 +76,7 @@ def train(
     prompt_template_name: str = "alpaca",  # The prompt template to use, will default to alpaca.
 ):     
 
-    training_name = f"{get_after_slash(base_model)}_{len(removal_list)}"
+    training_name = f"{get_after_slash(base_model)}_{len(removal_list)}_e{num_epochs}_r{lora_r}_len{cutoff_len}"
     output_dir = os.path.join(output_dir,training_name)
 
     wandb_run_name = training_name
@@ -265,12 +268,12 @@ def train(
             logging_steps=10,
             optim="adamw_torch",
             evaluation_strategy="steps" if val_set_size > 0 else "no",
-            save_strategy="steps",
+            save_strategy="epoch",
             eval_steps=200 if val_set_size > 0 else None,
-            save_steps=200,
+            #save_steps=200,
             output_dir=output_dir,
             save_total_limit=3,
-            load_best_model_at_end=True if val_set_size > 0 else False,
+            #load_best_model_at_end=True if val_set_size > 0 else False,
             ddp_find_unused_parameters=False if ddp else None,
             group_by_length=group_by_length,
             report_to="wandb" if use_wandb else None,
