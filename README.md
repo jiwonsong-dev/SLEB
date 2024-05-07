@@ -1,4 +1,4 @@
-# [ICML2024] SLEB
+# SLEB
 Official Implementation of the ICML 2024 paper [SLEB: Streamlining LLMs through Redundancy Verification and  Elimination of Transformer Blocks](http://arxiv.org/abs/2402.09025)
 
 ## Installation
