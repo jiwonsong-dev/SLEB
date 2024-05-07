@@ -1,6 +1,8 @@
 # SLEB
 Official Implementation of the ICML 2024 paper [SLEB: Streamlining LLMs through Redundancy Verification and  Elimination of Transformer Blocks](http://arxiv.org/abs/2402.09025)
 
+![This image is not available for now.](assets/overview.png)
+
 ## Installation
 
     git clone https://github.com/leapingjagg-dev/SLEB.git
