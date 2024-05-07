@@ -120,9 +120,9 @@ def simple_evaluate(
             },
         )
         if remove is True:
-            from utils.remove import remove as remove_fn
+            from SLEB.utils.block_remove import block_remove
             lm.model.name = model_args
-            lm._model = remove_fn(lm.model, removal_list)
+            lm._model = block_remove(lm.model, removal_list)
 
     else:
         assert isinstance(model, lm_eval.api.model.LM)

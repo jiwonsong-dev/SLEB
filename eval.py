@@ -1,19 +1,21 @@
 import copy
 from tqdm import tqdm
 import fire
+import os
 from typing import List
 
 import torch
 
 from utils.model_utils import get_llm
 from utils.eval_utils import load_and_eval_ppl, eval_zero_shot
-from utils.remove import remove
+from SLEB.utils.block_remove import block_remove
 
 def eval(
-        model_name: str = 'facebook/opt-13b',
-        removal_list: List[int] = [4,8,2,13,17,24,36,12],
+        model_name: str = 'meta-llama/Llama-2-7b-hf',
+        removal_list: List[int] = [],
         save_results: bool = True,
-        result_path: str = "sleb_results/eval.txt",
+        result_folder: str = 'sleb_results',
+        result_file: str = 'eval.txt',
         device: int = 0,
         eval_zeroshot: bool = False
     ):
@@ -25,7 +27,7 @@ def eval(
     
     original_removal_list = copy.deepcopy(removal_list)
     removal_list.sort()
-    model = remove(model, copy.deepcopy(removal_list))
+    model = block_remove(model, copy.deepcopy(removal_list))
     
     print(f"Starting PPL evaluation...")
     ppl_list = {}
@@ -55,6 +57,11 @@ def eval(
 
         for task in tasks:
             print(f"{task}: {results[task]}")
+
+    if not os.path.exists(result_folder):
+        os.makedirs(result_folder)
+
+    result_path = os.path.join(result_folder, result_file)
     
     if save_results:
         with open(result_path, 'a') as file:

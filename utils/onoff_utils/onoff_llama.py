@@ -103,7 +103,7 @@ class OnOff_LlamaDecoderLayer(nn.Module):
 
         return outputs
     
-def replace(model):
+def block_replace(model):
 
     num_layers = len(model.model.layers)
     for i in range(num_layers):

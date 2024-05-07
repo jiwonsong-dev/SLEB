@@ -2,18 +2,19 @@ import fire
 import copy
 import time
 from tqdm import tqdm
+import os
 
 import torch
 import torch.nn as nn
 
 from utils.model_utils import get_llm
-from utils.onoff_utils.onoff import replace, turn_off, turn_on
+from utils.onoff_utils.onoff import block_replace, turn_off, turn_on
 from utils.data_utils import *
-from utils.remove import remove
+from SLEB.utils.block_remove import block_remove
 from utils.eval_utils import load_and_eval_ppl, eval_zero_shot
 
 @torch.no_grad()
-def nlls(model, testenc, bs=1, device=None):
+def loss(model, testenc, bs=1, device=None):
     # Get input IDs
     testenc = testenc.input_ids
 
@@ -21,7 +22,7 @@ def nlls(model, testenc, bs=1, device=None):
     nsamples = testenc.numel() // model.seqlen
   
     # List to store negative log likelihoods
-    nlls = []
+    losses = []
     #print(f"nsamples {nsamples}")
 
     # Loop through each batch
@@ -46,30 +47,27 @@ def nlls(model, testenc, bs=1, device=None):
         loss = loss_fct(shift_logits.reshape(-1, shift_logits.size(-1)), shift_labels.reshape(-1))
 
         # Calculate negative log likelihood
-        neg_log_likelihood = loss.float() * model.seqlen * (j-i)
+        loss = loss.float() * model.seqlen * (j-i)
 
         # Append to list of negative log likelihoods
-        nlls.append(neg_log_likelihood)
+        losses.append(loss)
 
     # Compute sum of negative log_likelihood
-    #ppl = torch.exp(torch.stack(nlls).sum() / (nsamples * model.seqlen))
-    sum = torch.stack(nlls).sum()
+    loss_sum = torch.stack(loss).sum()
 
-    # Empty CUDA cache to save memory
-    # torch.cuda.empty_cache()
-
-    return sum.item()
+    return loss_sum.item()
 
 
 def sleb(
-        model_name: str = 'facebook/opt-6.7b',
+        model_name: str = 'meta-llama/Llama-2-7b-hf',
         num_blocks: int = 32,
         num_remove_blocks: int = 7,
         early_barrier: int = 1,
         latter_barrier: int = 1,
         seed: int = 0,
         nsamples: int = 128,
-        result_path: str = 'sleb_results/sleb.txt',
+        result_folder: str = 'sleb_results',
+        result_file: str = 'sleb_results.txt',
         dataset: str = 'wikitext2',
         eval_ppl: bool = True,
         eval_zeroshot: bool = False
@@ -98,10 +96,10 @@ def sleb(
     for i in range(num_remove_blocks):
 
         phase_start_point = time.time()
-        print(f"phase {i+1} of {num_remove_blocks}")
+        print(f"Phase {i+1} of {num_remove_blocks}")
 
-        min_snlls = 1e99
-        min_snlls_idx = -1
+        min_loss = 1e99
+        min_loss_idx = -1
 
         search_bound = num_blocks - i
 
@@ -110,16 +108,15 @@ def sleb(
             # kill j-th alive block
             turn_off(model, alive_list[j])
 
-            snlls = nlls(model, dataloader, bs=1, device=torch.device("cuda:0"))
+            loss = nlls(model, dataloader, bs=1, device=torch.device("cuda:0"))
             torch.cuda.empty_cache()
             
-            if snlls < min_snlls:
-                min_snlls = snlls
-                min_snlls_idx = j
+            if loss < min_loss:
+                min_loss = loss
+                min_loss_idx = j
 
             print(
-                f"block {j} removed (original block {alive_list[j]}) => snlls={snlls:.3f}\n"
-                f"current min snlls_idx orignal block {alive_list[min_snlls_idx]} => min_snlls={min_snlls:.3f}"
+                f"[Block {j} (Original block {alive_list[j]}) removed] Loss={loss:.3f}, Current Min Loss={min_loss:.3f} / Layer {alive_list[min_loss_idx]}"
             )
             # unkill j-th alive block
             turn_on(model, alive_list[j])
@@ -129,14 +126,13 @@ def sleb(
         phase_time_elapsed = phase_finish_point -  phase_start_point
 
         # remove block causing the least snlls increase
-        print(f"phase_time_elapsed {phase_time_elapsed}")
-        print(f"SELECTED block {min_snlls_idx} (original lyaer {alive_list[min_snlls_idx]} to be removed) => ")        
-        print(f"snlls={min_snlls}")
+        print(f"Phase_time_elapsed (s): {phase_time_elapsed}")
+        print(f"[SELECTED block {min_loss_idx} (Originally block {alive_list[min_loss_idx]})] Loss={min_loss:.3f}")      
 
-        turn_off(model, alive_list[min_snlls_idx])
-        removal_list.append(alive_list[min_snlls_idx])
-        print(f"current skip list: {removal_list}")
-        del alive_list[min_snlls_idx]
+        turn_off(model, alive_list[min_loss_idx])
+        removal_list.append(alive_list[min_loss_idx])
+        print(f"Current Block Removal List: {removal_list}")
+        del alive_list[min_loss_idx]
     
     finish_point = time.time()
     time_elapsed = finish_point - start_point
@@ -154,7 +150,7 @@ def sleb(
 
     if eval_ppl:
         print(f"Starting PPL evaluation...")
-        model = remove(model, copy.deepcopy(removal_list))
+        model = block_remove(model, copy.deepcopy(removal_list))
         model.config.use_cache = use_cache
 
         w2_ppl = load_and_eval_ppl(model, device=torch.device("cuda:0"), dataset='wikitext2')
@@ -177,6 +173,11 @@ def sleb(
 
         for task in tasks:
             print(f"{task}: {results[task]}")
+
+    if not os.path.exists(result_folder):
+        os.makedirs(result_folder)
+    
+    result_path = os.path.join(result_folder, result_file)
 
     with open(result_path, 'a') as file:
         sentences = []

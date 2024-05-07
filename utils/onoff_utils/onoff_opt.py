@@ -120,7 +120,7 @@ class OnOff_OPTDecoderLayer(nn.Module):
 
         return outputs
     
-def replace(model):
+def block_replace(model):
 
     num_layers = len(model.model.decoder.layers)
     for i in range(num_layers):

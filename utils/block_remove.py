@@ -2,16 +2,16 @@ import torch
 import numpy as np
 from tqdm import tqdm
 
-def remove(model, kill_list):
+def block_remove(model, kill_list):
     print(f"Removing layers... {kill_list}")
     if 'opt' in model.name.lower():
-        return remove_opt(model, kill_list)
+        return block_remove_opt(model, kill_list)
     elif 'llama' in model.name.lower():
-        return remove_llama(model, kill_list)
+        return block_remove_llama(model, kill_list)
     else:
         return None
 
-def remove_opt(model, kill_list):
+def block_remove_opt(model, kill_list):
 
     kill_list.sort()
     
@@ -24,7 +24,7 @@ def remove_opt(model, kill_list):
     
     return model
 
-def remove_llama(model, kill_list):
+def block_remove_llama(model, kill_list):
 
     kill_list.sort()
 

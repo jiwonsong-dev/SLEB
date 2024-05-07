@@ -1,10 +1,10 @@
 from utils.onoff_utils import onoff_opt, onoff_llama
 
-def replace(model):
+def block_replace(model):
     if 'opt' in model.name.lower():
-        model = onoff_opt.replace(model)
+        model = onoff_opt.block_replace(model)
     elif 'llama' in model.name.lower():
-        model = onoff_llama.replace(model)
+        model = onoff_llama.block_replace(model)
     
     return model
 
