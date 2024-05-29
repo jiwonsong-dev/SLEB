@@ -10,11 +10,11 @@ import torch.nn as nn
 from utils.model_utils import get_llm
 from utils.onoff_utils.onoff import block_replace, turn_off, turn_on
 from utils.data_utils import *
-from SLEB.utils.block_remove import block_remove
+from utils.block_remove import block_remove
 from utils.eval_utils import load_and_eval_ppl, eval_zero_shot
 
 @torch.no_grad()
-def loss(model, testenc, bs=1, device=None):
+def get_loss(model, testenc, bs=1, device=None):
     # Get input IDs
     testenc = testenc.input_ids
 
@@ -53,7 +53,7 @@ def loss(model, testenc, bs=1, device=None):
         losses.append(loss)
 
     # Compute sum of negative log_likelihood
-    loss_sum = torch.stack(loss).sum()
+    loss_sum = torch.stack(losses).sum()
 
     return loss_sum.item()
 
@@ -81,7 +81,7 @@ def sleb(
     print(f"Loaded Model: {model.name}")
     
     # replace
-    model = replace(model)
+    model = block_replace(model)
     model.eval()
 
     dataloader = get_trainloaders(dataset,
@@ -108,7 +108,7 @@ def sleb(
             # kill j-th alive block
             turn_off(model, alive_list[j])
 
-            loss = nlls(model, dataloader, bs=1, device=torch.device("cuda:0"))
+            loss = get_loss(model, dataloader, bs=1, device=torch.device("cuda:0"))
             torch.cuda.empty_cache()
             
             if loss < min_loss:
