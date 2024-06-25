@@ -11,6 +11,16 @@ In this paper, we introduce SLEB, a novel approach designed to streamline LLMs b
 
 Our experimental results demonstrate that SLEB outperforms previous LLM pruning methods in accelerating LLM inference while also maintaining superior perplexity and accuracy, making SLEB as a promising technique for enhancing the efficiency of LLMs.
 
+## Key Results
+### Perplexity (C4)
+* The throughput improvement results are measured with LLaMA-2-70B on 2 NVIDIA A100 GPUs.
+
+![This image is not available for now.](assets/c4_perplexity.png)
+
+### Zero-shot Tasks
+* The latency results are measured with LLaMA-2-70B on 2 NVIDIA A100 GPUs.
+
+![This image is not available for now.](assets/zeroshot.png)
 
 ## Installation
 
